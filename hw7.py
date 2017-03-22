@@ -8,7 +8,7 @@ import tweepy
 import twitter_info # still need this in the same directory, filled out
 
 ## Make sure to comment with:
-# Your name:
+# Your name: Sara Ramaswamy
 # The names of any people you worked with for this assignment:
 
 # ******** #
@@ -53,20 +53,50 @@ except:
 # Here, define a function called get_user_tweets that accepts a specific Twitter user handle (e.g. "umsi" or "umich" or "Lin_Manuel" or "ColleenAtUMSI") and returns data that represents at least 20 tweets from that user's timeline.
 
 # Your function must cache data it retrieves and rely on a cache file!
+## cached correctl because first time got info from internet and second time cached data
+def get_user_tweets(twitter_handle):
+	unique_id = "twitter_{}".format(twitter_handle)
+	if unique_id in CACHE_DICTION:
+		print('using cached data for', twitter_handle)
+		twitter_results = CACHE_DICTION[unique_id]
+	else: 
+		print('getting data from internet for', twitter_handle)
+		twitter_results = api.user_timeline(twitter_handle)
+		CACHE_DICTION[unique_id] = twitter_results
+		f = open(CACHE_FNAME, 'w')
+		f.write(json.dumps(CACHE_DICTION))
+		f.close
+	tweet_count = 0
+	tweet_texts = []
+	for tweet in twitter_results:
+		if tweet_count<20:
+			tweet_texts.append(tweet)
+	return tweet_texts
+
+
+
 # Note that this is a lot like work you have done already in class (but, depending upon what you did previously, may not be EXACTLY the same, so be careful your code does exactly what you want here).
 
 
-
-
-
+conn = sqlite3.connect('tweets.db')
+cur = conn.cursor()
 # Write code to create/build a connection to a database: tweets.db,
 # And then load all of those tweets you got from Twitter into a database table called Tweets, with the following columns in each row:
-
+cur.execute('DROP TABLE IF EXISTS Tweets')
+table_spec = 'CREATE TABLE IF NOT EXISTS '
+table_spec += 'Tweets (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+table_spec  += 'tweet_id TEXT, author TEXT, time_posted TIMESTAMP, tweet_text TEXT, retweets INTEGER)'
+cur.execute(table_spec)
 ## tweet_id - containing the unique id that belongs to each tweet
+##[id]
 ## author - containing the screen name of the user who posted the tweet (note that even for RT'd tweets, it will be the person whose timeline it is)
+##["user"][screen_name]
 ## time_posted - containing the date/time value that represents when the tweet was posted (note that this should be a TIMESTAMP column data type!)
-## tweet_text - containing the text that goes with that tweet
+##[created_at]
+## tweet_text - containing the text that goes with that tweet##[text]
+##[text]
 ## retweets - containing the number that represents how many times the tweet has been retweeted
+##[retweet_count]
 
 # Below we have provided interim outline suggestions for what to do, sequentially, in comments.
 
@@ -79,10 +109,36 @@ except:
 
 # Invoke the function you defined above to get a list that represents a bunch of tweets from the UMSI timeline. Save those tweets in a variable called umsi_tweets.
 
+umsi_tweets = get_user_tweets("umsi")
+my_tuple = ()
+list_of_tuples = []
+# print(umsi_tweets[0])
+for tweet in umsi_tweets:
+	my_tuple = None, tweet["id"], tweet["user"]["screen_name"], tweet["created_at"], tweet["text"], tweet["retweet_count"]
+	list_of_tuples.append(my_tuple)
+	
 
 
+statement = 'INSERT INTO Tweets VALUES (?, ?, ?, ?, ?, ?)'
+for item in list_of_tuples:
+	cur.execute(statement, item)
+
+conn.commit()
+# for tweet in umsi_tweets:
+# 	each_tuple = (tweet["id"], tweet["screen_name"], )
+
+# 	cur.execute(statement, tweet)
+# 	'INSERT INTO Tweets (tweet_id, author, time_posted, tweet_text, retweets) VALUES (?, ?, ?, ?, ?)', ('tweet["id"]', 'tweet["user"]["screen_name"]', 'tweet["created_at"]', 'tweet["text"]', 'tweet["retweet_count"]')
+# conn.commit()
+
+
+# print(umsi_tweets[0].keys())
+# print(umsi_tweets[0]["user"]["screen_name"])
 
 # Use a for loop, the cursor you defined above to execute INSERT statements, that insert the data from each of the tweets in umsi_tweets into the correct columns in each row of the Tweets database table.
+
+# statement = 'INSERT INTO Tweets VALUES (?, ?, ?, ?)'
+# for t in 
 
 # (You should do nested data investigation on the umsi_tweets value to figure out how to pull out the data correctly!)
 
