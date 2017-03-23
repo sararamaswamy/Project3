@@ -7,6 +7,7 @@ import re
 import tweepy
 import twitter_info # still need this in the same directory, filled out
 
+
 ## Make sure to comment with:
 # Your name: Sara Ramaswamy
 # The names of any people you worked with for this assignment:
@@ -160,24 +161,51 @@ conn.commit()
 
 
 # Select from the database all of the TIMES the tweets you collected were posted and fetch all the tuples that contain them in to the variable tweet_posted_times.
-
+q1 = "SELECT time_posted from Tweets"
+# print(type(q1))
+cur.execute(q1)
+tweet_posted_times = cur.fetchall()
 
 # Select all of the tweets (the full rows/tuples of information) that have been retweeted MORE than 2 times, and fetch them into the variable more_than_2_rts.
 
+q2 = "SELECT * from Tweets WHERE retweets > 2"
+cur.execute(q2)
+more_than_2_rts = cur.fetchall()
 
 
 # Select all of the TEXT values of the tweets that are retweets of another account (i.e. have "RT" at the beginning of the tweet text). Save the FIRST ONE from that group of text values in the variable first_rt. Note that first_rt should contain a single string value, not a tuple.
+q3 = "SELECT tweet_text from Tweets  WHERE instr(tweet_text, 'RT') ORDER BY tweet_text"
+cur.execute(q3)
+first_rt = str(cur.fetchone())
+
 
 
 
 # Finally, done with database stuff for a bit: write a line of code to close the cursor to the database.
 
-
+conn.close()
 
 ## [PART 3] - Processing data
 
 # Define a function get_twitter_users that accepts a string as in put and returns a SET of the _twitter screennames_ of each twitter user who was mentioned in that string. 
+## input: string
+## def get_twitter_users(any_string):
+     ## 
+def get_twitter_users(any_string):
+	my_regex = r'@(\w+_?)'
+	x = re.findall(my_regex, any_string)
+	# My_set = set(x)
+	return(set(x))
 
+## return: SET of twitter screennames of each twitter user who was mentioned in that string
+## only username if letters and underscores
+## regex example tbt
+# regex = r'http[s]?://\w+(?:\.\w\w+)+/?\S+'
+## this_regex = r'@(\w+_?)'
+## must turn a list into tuple 
+## return_set = 
+## set can't contain list or dictionary, just TUPLES! 
+# return_urls = re.findall(regex, any_string)
 # Note that the syntax for mentions in a tweet is that the username is preceded by an "@" character, e.g. "@umsi" or "@aadl", and cannot contain any punctuation besides underscores -- that's how to determine what user names are mentioned. (e.g. @hello? is just the username "hello", but @programmer_at_umsi is "programmer_at_umsi"). 
 
 #re.match and getting the 0th group from the MatchObject may be useful for you here... reminder: http://stackoverflow.com/questions/15340582/python-extract-pattern-matches
