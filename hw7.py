@@ -178,7 +178,7 @@ q3 = "SELECT tweet_text from Tweets  WHERE instr(tweet_text, 'RT') ORDER BY twee
 cur.execute(q3)
 first_rt = str(cur.fetchone())
 
-
+## Part 3 is a bad test
 
 
 # Finally, done with database stuff for a bit: write a line of code to close the cursor to the database.
