@@ -39,25 +39,53 @@ api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 
 CACHE_FNAME = "SI206_project3_cache.json"
 # Put the rest of your caching setup here:
-
+try:
+	cache_file = open(CACHE_FNAME,'r')
+	cache_contents = cache_file.read()
+	cache_file.close()
+	CACHE_DICTION = json.loads(cache_contents)
+except:
+	CACHE_DICTION = {}
 
 
 # Define your function get_user_tweets here:
-
-
+def get_user_tweets(twitter_handle):
+	unique_id = "twitter_{}".format(twitter_handle)
+	if unique_id in CACHE_DICTION:
+		print('using cached data for', twitter_handle)
+		twitter_results = CACHE_DICTION[unique_id]
+	else: 
+		print('getting data from internet for', twitter_handle)
+		twitter_results = api.user_timeline(twitter_handle)
+		CACHE_DICTION[unique_id] = twitter_results
+		f = open(CACHE_FNAME, 'w')
+		f.write(json.dumps(CACHE_DICTION))
+		f.close
+	tweet_count = 0
+	tweet_texts = []
+	for tweet in twitter_results:
+		if tweet_count<20:
+			tweet_texts.append(tweet)
+	return tweet_texts
 
 
 # Write an invocation to the function for the "umich" user timeline and save the result in a variable called umich_tweets:
-
-
-
+umich_tweets = get_user_tweets("umich")
 
 ## Task 2 - Creating database and loading data into database
 
 # You will be creating a database file: project3_tweets.db
+conn = sqlite3.connect('project3_tweets.db')
+cur = conn.cursor()
 # Note that running the tests will actually create this file for you, but will not do anything else to it like create any tables; you should still start it in exactly the same way as if the tests did not do that! 
-# The database file should have 2 tables, and each should have the following columns... 
+# The database file should have 2 tables, and each should have the following columns...
 
+statement = 'CREATE TABLE IF NOT EXISTS '
+statement += 'Tweets (tweet_id INTEGER PRIMARY KEY, text TEXT, user_posted TEXT, time_posted TIMESTAMP, retweets INTEGER, FOREIGN KEY(user_posted) REFERENCES Users(user_id) ON UPDATE SET NULL)' 
+
+statement = 'CREATE TABLE IF NOT EXISTS '
+statement += 'Users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, screen_name TEXT UNIQUE, num_favs INTEGER, description TEXT)'
+cur.execute(statement)
 # table Tweets, with columns:
 # - tweet_id (containing the string id belonging to the Tweet itself, from the data you got from Twitter) -- this column should be the PRIMARY KEY of this table
 # - text (containing the text of the Tweet)
@@ -65,14 +93,45 @@ CACHE_FNAME = "SI206_project3_cache.json"
 # - time_posted (the time at which the tweet was created)
 # - retweets (containing the integer representing the number of times the tweet has been retweeted)
 
+
 # table Users, with columns:
 # - user_id (containing the string id belonging to the user, from twitter data) -- this column should be the PRIMARY KEY of this table
 # - screen_name (containing the screen name of the user on Twitter)
 # - num_favs (containing the number of tweets that user has favorited)
 # - description (text containing the description of that user on Twitter, e.g. "Lecturer IV at UMSI focusing on programming" or "I tweet about a lot of things" or "Software engineer, librarian, lover of dogs..." -- whatever it is. OK if an empty string)
 
+##Tweets
+my_tuple1 = ()
+list_of_tuples1 = []
+# print(umsi_tweets[0])
+for tweet in umich_tweets:
+	my_tuple1 = tweet["id"], tweet["text"], tweet["user"]["screen_name"], tweet["created_at"], tweet["retweet_count"]
+	list_of_tuples1.append(my_tuple1)
+
+statement = 'INSERT OR IGNORE INTO Tweets VALUES (?, ?, ?, ?, ?)'
+for item in list_of_tuples1:
+	cur.execute(statement, item)
+
+conn.commit()
+
+
+## USers
+my_tuple2 = ()
+list_of_tuples2 = []
+for tweet in umich_tweets:
+	my_tuple2 = tweet["user"]["id_str"], tweet["user"]["screen_name"], tweet["user"]["favourites_count"], tweet["user"]["description"]
+	list_of_tuples2.append(my_tuple2)
+# print(list_of_tuples)
+
+statement = 'INSERT OR IGNORE INTO Users VALUES (?, ?, ?, ?)'
+for item in list_of_tuples2:
+	print(item)
+	cur.execute(statement, item)
+
+conn.commit()
 ## You should load into the Users table:
 # The umich user, and all of the data about users that are mentioned in the umich timeline. 
+## done
 # NOTE: For example, if the user with the "TedXUM" screen name is mentioned in the umich timeline, that Twitter user's info should be in the Users table, etc.
 
 ## You should load into the Tweets table: 
