@@ -13,6 +13,7 @@ import tweepy
 import twitter_info # same deal as always...
 import json
 import sqlite3
+import re
 
 ## Your name:
 ## The names of anyone you worked with on this project:
@@ -60,7 +61,7 @@ def get_user_tweets(twitter_handle):
 		CACHE_DICTION[unique_id] = twitter_results
 		f = open(CACHE_FNAME, 'w')
 		f.write(json.dumps(CACHE_DICTION))
-		f.close
+		f.close()
 	tweet_count = 0
 	tweet_texts = []
 	for tweet in twitter_results:
@@ -70,7 +71,8 @@ def get_user_tweets(twitter_handle):
 
 
 # Write an invocation to the function for the "umich" user timeline and save the result in a variable called umich_tweets:
-umich_tweets = get_user_tweets("umich")
+umich_tweets = get_user_tweets("umich") 
+# print(umich_tweets[0])
 
 ## Task 2 - Creating database and loading data into database
 
@@ -80,12 +82,20 @@ cur = conn.cursor()
 # Note that running the tests will actually create this file for you, but will not do anything else to it like create any tables; you should still start it in exactly the same way as if the tests did not do that! 
 # The database file should have 2 tables, and each should have the following columns...
 
+cur.execute('DROP TABLE IF EXISTS Users')
 statement = 'CREATE TABLE IF NOT EXISTS '
-statement += 'Tweets (tweet_id INTEGER PRIMARY KEY, text TEXT, user_posted TEXT, time_posted TIMESTAMP, retweets INTEGER, FOREIGN KEY(user_posted) REFERENCES Users(user_id) ON UPDATE SET NULL)' 
+statement += 'Users (user_id STRING PRIMARY KEY, screen_name TEXT UNIQUE, num_favs INTEGER, description TEXT)'
 
-statement = 'CREATE TABLE IF NOT EXISTS '
-statement += 'Users (user_id INTEGER PRIMARY KEY AUTOINCREMENT, screen_name TEXT UNIQUE, num_favs INTEGER, description TEXT)'
 cur.execute(statement)
+
+cur.execute('DROP TABLE IF EXISTS Tweets')
+statement = 'CREATE TABLE IF NOT EXISTS '
+statement += 'Tweets (tweet_id STRING PRIMARY KEY, text TEXT, user_id TEXT, time_posted TIMESTAMP, retweets INTEGER, FOREIGN KEY(user_id) REFERENCES Users(user_id) ON UPDATE SET NULL)' 
+
+
+cur.execute(statement)
+conn.commit()
+
 # table Tweets, with columns:
 # - tweet_id (containing the string id belonging to the Tweet itself, from the data you got from Twitter) -- this column should be the PRIMARY KEY of this table
 # - text (containing the text of the Tweet)
@@ -103,10 +113,37 @@ cur.execute(statement)
 ##Tweets
 my_tuple1 = ()
 list_of_tuples1 = []
+my_tuple2 = ()
+list_of_tuples2 = []
+user_names = []
+user_name_tuple = ()
+twitter_handles = []
+# my_regex = r'@(\w+)' ## get a twitter name from string
 # print(umsi_tweets[0])
 for tweet in umich_tweets:
-	my_tuple1 = tweet["id"], tweet["text"], tweet["user"]["screen_name"], tweet["created_at"], tweet["retweet_count"]
+	# x = re.findall(my_regex, tweet["text"])
+	# My_set = set(x)
+	# if len(My_set)>0:
+	# 	print(My_set)
+	my_tuple1 = tweet["id_str"], tweet["text"], tweet["user"]["id_str"], tweet["created_at"], tweet["retweet_count"]
 	list_of_tuples1.append(my_tuple1)
+	## for every tweet in this list of tweets
+	## build a list of tuples to load into the database table Tweets
+	##using the user_mentions in the tweets' attribute, build another list of tuples to laod into the database table USers
+
+	# my_tuple2 = tweet["user"][]
+
+	## gets mentioned names 
+	mentions_in_tweet = tweet["entities"]["user_mentions"]
+	for item in mentions_in_tweet:
+		if item["screen_name"] not in user_names:
+			user_names.append(item["screen_name"])
+	# user_name_tuple = tuple(user_names)
+
+
+	# print(mentions_in_tweet) ## type list
+
+# print(user_name_tuple)
 
 statement = 'INSERT OR IGNORE INTO Tweets VALUES (?, ?, ?, ?, ?)'
 for item in list_of_tuples1:
@@ -116,17 +153,58 @@ conn.commit()
 
 
 ## USers
-my_tuple2 = ()
-list_of_tuples2 = []
-for tweet in umich_tweets:
-	my_tuple2 = tweet["user"]["id_str"], tweet["user"]["screen_name"], tweet["user"]["favourites_count"], tweet["user"]["description"]
-	list_of_tuples2.append(my_tuple2)
-# print(list_of_tuples)
+name_info = []
+list_of_names_tuple = ()
+# print(user_names)
+## able to return list of the mentioned tweets, no duplicates 
+## now i want to correctly use another api function to feed those names to that function to retrieve info about that user and create the necessary tuples from that data
+## feed those tuples into the Users Database 
+
+# user_results = api.get_user(user_names)
+# print(user_results)
+# user_results = api.get_user(user_names)
+# print(json.dumps(user_results, indent = 2))
+for name in user_names:
+	user_results = api.get_user(name)
+	user_name_tuple = user_results["id_str"], user_results["screen_name"], user_results["favourites_count"], user_results["description"]
+	list_of_tuples2.append(user_name_tuple)
+
+
 
 statement = 'INSERT OR IGNORE INTO Users VALUES (?, ?, ?, ?)'
 for item in list_of_tuples2:
-	print(item)
 	cur.execute(statement, item)
+
+conn.commit()
+
+
+# for tweet in umich_tweets:
+# 	tweet_id = tweet["user"]["screen_name"]
+# 	tweet_text = tweet["text"]
+# 	print(tweet_text)
+# 	get_user_names = 'SELECT text FROM Tweets WHERE instr(text, "@")'
+# 	cur.execute(get_user_names)
+
+	# select_sql = 'SELECT * FROM Tweets WHERE text=' + my_str
+	# cur.execute(select_sql, (text,))
+	# if not cur.fetchone():
+	# 	insert_sql = 'INSERT OR IGNORE INTO USERS VALUES (?, ?, ?, ?)'
+	# 	cur.execute(insert_sql, (tweet["user"]["id_str"], tweet["user"]["screen_name"], tweet["user"]["favourites_count"], tweet["user"]["description"]))
+
+
+
+	# my_tuple2 = tweet["user"]["id_str"], tweet["user"]["screen_name"], tweet["user"]["favourites_count"], tweet["user"]["description"]
+	# list_of_tuples2.append(my_tuple2)
+# print(list_of_tuples)
+
+
+## old solution
+# statement = 'INSERT OR IGNORE INTO Users VALUES (?, ?, ?, ?)'
+# for item in list_of_tuples2:
+# 	print(item)
+# 	cur.execute(statement, item)
+
+
 
 conn.commit()
 ## You should load into the Users table:
@@ -142,56 +220,89 @@ conn.commit()
 ## HINT #2: You may want to go back to a structure we used in class this week to ensure that you reference the user correctly in each Tweet record.
 ## HINT #3: The users mentioned in each tweet are included in the tweet dictionary -- you don't need to do any manipulation of the Tweet text to find out which they are! Do some nested data investigation on a dictionary that represents 1 tweet to see it!
 
+## INSERT INTO bar (description, foo_id) VALUES
+## ('testing, (SELECTION id from foo WHERE type = 'blue' ) ' )    ## foo is table with 2 field--one is id one is type, description = to test and secodnd one description = another row 
 
 
-
-
-
-
-
-
-
-
-## Task 3 - Making queries, saving data, fetching data
+## Task 3 - Making queries, saving data, fetching data ##easy
 
 # All of the following sub-tasks require writing SQL statements and executing them using Python.
 
 # Make a query to select all of the records in the Users database. Save the list of tuples in a variable called users_info.
+query1 = 'SELECT * From Users'
+cur.execute(query1)
+users_info = cur.fetchall()
 
 # Make a query to select all of the user screen names from the database. Save a resulting list of strings (NOT tuples, the strings inside them!) in the variable screen_names. HINT: a list comprehension will make this easier to complete!
+ 
+## need query 2
+screen_names = []
+query2 = 'SELECT  screen_name from Users'
+cur.execute(query2)
+string_nms = cur.fetchall()
+for x in string_nms:
+	screen_names.append(x[0])
 
+
+# print(string_nms)
+
+# print(string_nms[0])
+# for item in string_nms:
+
+
+# print(my_list)
 
 # Make a query to select all of the tweets (full rows of tweet information) that have been retweeted more than 25 times. Save the result (a list of tuples, or an empty list) in a variable called more_than_25_rts.
 
-
+query3 = 'SELECT * From Tweets WHERE retweets > 25'
+cur.execute(query3)
+more_than_25_rts = cur.fetchall()
 
 # Make a query to select all the descriptions (descriptions only) of the users who have favorited more than 25 tweets. Access all those strings, and save them in a variable called descriptions_fav_users, which should ultimately be a list of strings.
 
+query4 = 'SELECT description from Users WHERE num_favs > 25'
+cur.execute(query4)
+descriptions_fav_users = []
+string_descrips = cur.fetchall()
+for x in string_descrips:
+	descriptions_fav_users.append(x[0])
 
 
 # Make a query using an INNER JOIN to get a list of tuples with 2 elements in each tuple: the user screenname and the text of the tweet -- for each tweet that has been retweeted more than 50 times. Save the resulting list of tuples in a variable called joined_result.
 
 
+## Task 3 help with query 5 
+query5 = 'SELECT Users.screen_name, Tweets.text FROM Tweets INNER JOIN Users on Tweets.user_id=Users.user_id WHERE retweets > 50'
+cur.execute(query5)
+joined_result = cur.fetchall()
+# print(joined_result)
 
 
-## Task 4 - Manipulating data with comprehensions & libraries
+## Task 4 - Manipulating data with comprehensions & libraries ##set comp?
 
 ## Use a set comprehension to get a set of all words (combinations of characters separated by whitespace) among the descriptions in the descriptions_fav_users list. Save the resulting set in a variable called description_words.
 
 
+joined_descrips = ''.join(descriptions_fav_users)
+print(joined_descrips) 
+description_words = {x for x in descriptions_fav_users}
+## edit this
+# print(description_words)
+
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
 
-
+most_common_char = collections.Counter(descriptions_fav_users)
+# print(most_common_char)
 
 ## Putting it all together...
 # Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
 
 
-
+##CLOSE THE DATABASE
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, but it's a pain). ###
-
+cur.close()
 
 ###### TESTS APPEAR BELOW THIS LINE ######
 ###### Note that the tests are necessary to pass, but not sufficient -- must make sure you've followed the instructions accurately! ######
@@ -199,7 +310,13 @@ print("\n\nBELOW THIS LINE IS OUTPUT FROM TESTS:\n")
 
 class Task1(unittest.TestCase):
 	def test_umich_caching(self):
-		fstr = open("SI206_project3_cache.json","r").read()
+		m_file = open("SI206_project3_cache.json","r")
+		## open file associated with string, read it
+		## save the contents to string
+		## can safely close file because the contents are saved 
+		## fstr is type string
+		fstr = m_file.read()
+		m_file.close()
 		self.assertTrue("umich" in fstr)
 	def test_get_user_tweets(self):
 		res = get_user_tweets("umsi")
