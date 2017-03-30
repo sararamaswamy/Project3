@@ -272,7 +272,9 @@ for x in string_descrips:
 
 
 ## Task 3 help with query 5 
-query5 = 'SELECT Users.screen_name, Tweets.text FROM Tweets INNER JOIN Users on Tweets.user_id=Users.user_id WHERE retweets > 50'
+## ask about this
+## only passes when retweets is lower numer, otherwise empty list and fails the test if not populated by tuples
+query5 = 'SELECT Users.screen_name, Tweets.text FROM Tweets INNER JOIN Users on Tweets.user_id=Users.user_id WHERE Tweets.retweets > 50'
 cur.execute(query5)
 joined_result = cur.fetchall()
 # print(joined_result)
@@ -282,22 +284,84 @@ joined_result = cur.fetchall()
 
 ## Use a set comprehension to get a set of all words (combinations of characters separated by whitespace) among the descriptions in the descriptions_fav_users list. Save the resulting set in a variable called description_words.
 
-
+# print(descriptions_fav_users)
+# joined_descrips = []
 joined_descrips = ''.join(descriptions_fav_users)
-print(joined_descrips) 
-description_words = {x for x in descriptions_fav_users}
+# print(joined_descrips)
+# print(len(joined_descrips)) ## chars
+joined_2 = joined_descrips.split()
+# print(type(joined_2))
+# print(len(joined_2))
+# for item in descriptions_fav_users:
+# 	# item.split()
+# 	print(item.split())
+# print(joined_descrips)
+
+# print(joined_descrips)
+description_words = {x for x in joined_2}
+# print(len(description_words))
+# print(description_words)
 ## edit this
 # print(description_words)
 
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
-
-most_common_char = collections.Counter(descriptions_fav_users)
+## are we counting whitespace char? yes? 
+char_count = collections.Counter(joined_descrips)
+# print(char_count)
+for letter, count in char_count.most_common(1):
+	most_common_char = letter
+	# print(most_common_char)
 # print(most_common_char)
 
 ## Putting it all together...
 # Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
+
+## create dictionary who keys are twitter screen names (query table for screen names)
+twitter_info_diction = {}
+query6 = 'SELECT screen_name from Users'
+cur.execute(query6)
+sns = cur.fetchall()
+print(sns)
+# query7 = 
+
+# for name in user_names:
+# 	user_results = api.get_user(name)
+# 	user_name_tuple = user_results["id_str"], user_results["screen_name"], user_results["favourites_count"], user_results["description"]
+# 	list_of_tuples2.append(user_name_tuple)
+
+# descriptions_fav_users = []
+# string_descrips = cur.fetchall()
+# for x in string_descrips:
+# 	descriptions_fav_users.append(x[0])
+# donald = get_user_tweets("realDonaldTrump")
+# print(donald[0])
+# print(len(donald))
+list_to_dict = []	
+
+for item in sns:
+	list_to_dict.append(item[0])
+# print(list_to_dict)
+for name in list_to_dict:
+	user_tweet_text = []
+	# new_list = []
+	usr_tweets = get_user_tweets(name) ## gets python object representing data of 20 tweets
+	for tweet in usr_tweets: ## for one tweet in the 20 tweets
+		user_tweet_text.append(tweet["text"]) ## get the tweet's text attribute and append to user_tweet_Text list for this user 
+	twitter_info_diction[name] = user_tweet_text ##  assign that list of text of tweets to the key in the twitter_info_diction
+	## when the big for loop starts again, it will do the same for the next name
+print(twitter_info_diction)
+# print(twitter_info_diction["HoffmanAndy"][0]["text"])
+## dictionary keys ARE the screen_names 
+
+
+# print(twitter_info_diction.values())
+
+## assign list of tweet texts that user posted to that key
+## use DefaultDict container in the collections library, a dict. comprehension, list comprehensions(s)
+## save final dictionary to twitter_info_diction
+
 
 
 ##CLOSE THE DATABASE
