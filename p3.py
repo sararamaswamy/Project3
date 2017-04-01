@@ -15,7 +15,7 @@ import json
 import sqlite3
 import re
 
-## Your name:
+## Your name: Sara Ramaswamy 
 ## The names of anyone you worked with on this project:
 
 #####
@@ -274,7 +274,7 @@ for x in string_descrips:
 ## Task 3 help with query 5 
 ## ask about this
 ## only passes when retweets is lower numer, otherwise empty list and fails the test if not populated by tuples
-query5 = 'SELECT Users.screen_name, Tweets.text FROM Tweets INNER JOIN Users on Tweets.user_id=Users.user_id WHERE Tweets.retweets > 50'
+query5 = 'SELECT Users.screen_name, Tweets.text FROM Tweets INNER JOIN Users on Tweets.user_id=Users.user_id WHERE Tweets.retweets > 5'
 cur.execute(query5)
 joined_result = cur.fetchall()
 # print(joined_result)
@@ -290,6 +290,9 @@ joined_descrips = ''.join(descriptions_fav_users)
 # print(joined_descrips)
 # print(len(joined_descrips)) ## chars
 joined_2 = joined_descrips.split()
+joined_3 = joined_descrips.strip()
+joined_4 = joined_3.replace(' ', '')
+print(joined_4)
 # print(type(joined_2))
 # print(len(joined_2))
 # for item in descriptions_fav_users:
@@ -298,6 +301,7 @@ joined_2 = joined_descrips.split()
 # print(joined_descrips)
 
 # print(joined_descrips)
+## set comprehension requirement fulfilled 
 description_words = {x for x in joined_2}
 # print(len(description_words))
 # print(description_words)
@@ -307,7 +311,8 @@ description_words = {x for x in joined_2}
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
 ## are we counting whitespace char? yes? 
-char_count = collections.Counter(joined_descrips)
+char_count = collections.Counter(joined_4)
+print(char_count)
 # print(char_count)
 for letter, count in char_count.most_common(1):
 	most_common_char = letter
@@ -323,7 +328,7 @@ twitter_info_diction = {}
 query6 = 'SELECT screen_name from Users'
 cur.execute(query6)
 sns = cur.fetchall()
-print(sns)
+# print(sns)
 # query7 = 
 
 # for name in user_names:
@@ -344,14 +349,13 @@ for item in sns:
 	list_to_dict.append(item[0])
 # print(list_to_dict)
 for name in list_to_dict:
-	user_tweet_text = []
 	# new_list = []
 	usr_tweets = get_user_tweets(name) ## gets python object representing data of 20 tweets
-	for tweet in usr_tweets: ## for one tweet in the 20 tweets
-		user_tweet_text.append(tweet["text"]) ## get the tweet's text attribute and append to user_tweet_Text list for this user 
+	user_tweet_text = [tweet["text"] for tweet in usr_tweets]
+	 ## get the tweet's text attribute and append to user_tweet_Text list for this user 
 	twitter_info_diction[name] = user_tweet_text ##  assign that list of text of tweets to the key in the twitter_info_diction
 	## when the big for loop starts again, it will do the same for the next name
-print(twitter_info_diction)
+# print(twitter_info_diction)
 # print(twitter_info_diction["HoffmanAndy"][0]["text"])
 ## dictionary keys ARE the screen_names 
 
