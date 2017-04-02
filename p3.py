@@ -164,11 +164,40 @@ list_of_names_tuple = ()
 # print(user_results)
 # user_results = api.get_user(user_names)
 # print(json.dumps(user_results, indent = 2))
+# for name in user_names:
+# 	if name in CACHE_DICTION:
+
+# 	else:
+# 		print("getting internet data for user info for ", name)
+# 		user_results = api.get_user(name)
+# 		user_name_tuple = user_results["id_str"], user_results["screen_name"], user_results["favourites_count"], user_results["description"]
+# 		list_of_tuples2.append(user_name_tuple)
+# 		CACHE_DICTION[name] = list_of_tuples2
+# 		f = open(CACHE_FNAME, 'w')
+# 		f.write(json.dumps(CACHE_DICTION))
+# 		f.close()
+
+# user_name_tuple = user_results["id_str"], user_results["screen_name"], user_results["favourites_count"], user_results["description"]
+# 		list_of_tuples2.append(user_name_tuple)
+
+def get_user_info(twitter_name):
+	if twitter_name in CACHE_DICTION:
+		print('using cached data for', twitter_name)
+		user_info = CACHE_DICTION[twitter_name]
+	else: 
+		print('getting data from internet for', twitter_name)
+		user_info = api.get_user(twitter_name)
+		
+		CACHE_DICTION[twitter_name] = user_info
+		f = open(CACHE_FNAME, 'w')
+		f.write(json.dumps(CACHE_DICTION))
+		f.close()
+	return user_info
+
 for name in user_names:
-	user_results = api.get_user(name)
+	user_results = get_user_info(name)
 	user_name_tuple = user_results["id_str"], user_results["screen_name"], user_results["favourites_count"], user_results["description"]
 	list_of_tuples2.append(user_name_tuple)
-
 
 
 statement = 'INSERT OR IGNORE INTO Users VALUES (?, ?, ?, ?)'
